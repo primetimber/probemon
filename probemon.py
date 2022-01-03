@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import time
 import datetime
@@ -6,8 +6,10 @@ import argparse
 import netaddr
 import sys
 import logging
-from scapy.all import *
-from pprint import pprint
+#from scapy.all import *
+from scapy.sendrecv import sniff
+#from pprint import pprint
+from scapy.layers.dot11 import Dot11
 from logging.handlers import RotatingFileHandler
 
 
@@ -18,7 +20,7 @@ DEBUG = False
 
 def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi):
 	def packet_callback(packet):
-		
+
 		if not packet.haslayer(Dot11):
 			return
 
@@ -45,13 +47,13 @@ def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi):
 			try:
 				parsed_mac = netaddr.EUI(packet.addr2)
 				fields.append(parsed_mac.oui.registration().org)
-			except netaddr.core.NotRegisteredError, e:
+			except netaddr.core.NotRegisteredError as e:
 				fields.append('UNKNOWN')
 
 		# include the SSID in the probe frame
 		if ssid:
-			fields.append(packet.info)
-			
+			fields.append(packet.info.decode("utf-8"))
+
 		if rssi:
 			rssi_val = -(256-ord(packet.notdecoded[-4:-3]))
 			fields.append(str(rssi_val))
@@ -76,9 +78,10 @@ def main():
 	args = parser.parse_args()
 
 	if not args.interface:
-		print "error: capture interface not given, try --help"
+		#print("error: capture interface not given, try --help")
+		sys.stderr.write("error: capture interface not given, trey --help\n")
 		sys.exit(-1)
-	
+
 	DEBUG = args.debug
 
 	# setup our rotating logger
